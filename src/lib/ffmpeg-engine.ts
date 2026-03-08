@@ -92,8 +92,13 @@ export async function preloadFFmpeg(): Promise<boolean> {
       log(`Módulos importados en ${(performance.now() - t0).toFixed(0)}ms`);
 
       setState("loading", "Inicializando motor WASM...");
-      log("Llamando ffmpeg.load() con archivos same-origin...");
       const ffmpeg = new FFmpeg();
+
+      ffmpeg.on("log", ({ message }: { message: string }) => {
+        log(`[core] ${message}`);
+      });
+
+      log("Llamando ffmpeg.load() con core@0.12.10 same-origin...");
       const t1 = performance.now();
       await withTimeout(
         ffmpeg.load({
