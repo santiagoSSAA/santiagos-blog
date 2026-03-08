@@ -28,3 +28,8 @@ export function extractStoragePath(publicUrl: string): string | null {
   if (idx === -1) return null;
   return publicUrl.substring(idx + marker.length);
 }
+
+export function proxyUrl(url: string): string {
+  if (!url || !url.includes(".supabase.co")) return url;
+  return `/api/media?url=${encodeURIComponent(url)}`;
+}

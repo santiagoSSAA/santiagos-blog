@@ -72,6 +72,8 @@ export async function preloadFFmpeg(): Promise<boolean> {
         return false;
       }
 
+      log(`crossOriginIsolated: ${self.crossOriginIsolated}`);
+
       try {
         new SharedArrayBuffer(1);
         log("SharedArrayBuffer OK (constructor funcional)");

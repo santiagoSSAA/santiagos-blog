@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
-import { extractStoragePath } from "@/lib/utils";
+import { extractStoragePath, proxyUrl } from "@/lib/utils";
 import { ImagePlus, Link2, Upload, Loader2, Check, X, Trash2, XCircle } from "lucide-react";
 
 type Mode = "choose" | "url" | "file";
@@ -171,7 +171,7 @@ export function ThumbnailUploader({ value, onChange }: ThumbnailUploaderProps) {
     onChange("");
   };
 
-  const previewSrc = localPreview || value;
+  const previewSrc = localPreview || (value ? proxyUrl(value) : "");
   const showPreview = previewSrc && state !== "error" && state !== "cancelled";
 
   if (showPreview) {
