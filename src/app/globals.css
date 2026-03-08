@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@layer base {
+  body {
+    @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 antialiased;
+  }
+}
+
+@layer components {
+  .prose-custom {
+    @apply leading-relaxed text-zinc-700 dark:text-zinc-300;
+  }
+
+  .prose-custom h1 {
+    @apply text-3xl font-bold text-zinc-900 dark:text-zinc-100 mt-8 mb-4;
+  }
+
+  .prose-custom h2 {
+    @apply text-2xl font-semibold text-zinc-900 dark:text-zinc-100 mt-6 mb-3;
+  }
+
+  .prose-custom h3 {
+    @apply text-xl font-semibold text-zinc-900 dark:text-zinc-100 mt-4 mb-2;
+  }
+
+  .prose-custom p {
+    @apply mb-4 text-base leading-7;
+  }
+
+  .prose-custom a {
+    @apply text-brand-600 dark:text-brand-400 underline underline-offset-2 hover:text-brand-700 dark:hover:text-brand-300 transition-colors;
+  }
+
+  .prose-custom blockquote {
+    @apply border-l-4 border-brand-500 pl-4 italic text-zinc-600 dark:text-zinc-400 my-4;
+  }
+
+  .prose-custom code {
+    @apply bg-zinc-100 dark:bg-zinc-800 rounded px-1.5 py-0.5 text-sm font-mono;
+  }
+
+  .prose-custom pre {
+    @apply bg-zinc-900 dark:bg-zinc-800 rounded-lg p-4 overflow-x-auto my-4;
+  }
+
+  .prose-custom pre code {
+    @apply bg-transparent p-0 text-zinc-100;
+  }
+
+  .prose-custom ul {
+    @apply list-disc list-inside mb-4 space-y-1;
+  }
+
+  .prose-custom ol {
+    @apply list-decimal list-inside mb-4 space-y-1;
+  }
+
+  .prose-custom img {
+    @apply rounded-lg my-4;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-brand-600 to-purple-600 dark:from-brand-400 dark:to-purple-400 bg-clip-text text-transparent;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-zinc-300 dark:bg-zinc-700 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-zinc-400 dark:bg-zinc-600;
+}
