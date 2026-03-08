@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html><head><title>FFmpeg Test</title></head>
+<body style="font-family:monospace;padding:2em;background:#111;color:#eee">
+<h2>FFmpeg WASM Diagnostic</h2>
+<pre id="log"></pre>
+<script>
+var el = document.getElementById("log");
+function log(msg) {
+  var line = new Date().toLocaleTimeString() + " " + msg;
+  el.textContent += line + "\n";
+  console.log(line);
+}
+
+(async function() {
+  log("crossOriginIsolated: " + self.crossOriginIsolated);
+  log("SharedArrayBuffer: " + typeof SharedArrayBuffer);
+
+  try { new SharedArrayBuffer(1); log("SAB constructor: OK"); }
+  catch(e) { log("SAB constructor: BLOCKED - " + e.message); return; }
+
+  log("");
+  log("=== TEST 1: import() desde hilo principal ===");
+  try {
+    var mod = await import("/ffmpeg/ffmpeg-core.js");
+    log("import OK, keys: " + Object.keys(mod).join(", "));
+    log("typeof default: " + typeof mod.default);
+  } catch(e) {
+    log("import FAIL: " + e.message);
+  }
+
+  log("");
+  log("=== TEST 2: importScripts en Worker clasico ===");
+  await new Promise(function(resolve) {
+    var code = 'try { importScripts("/ffmpeg/ffmpeg-core.js"); postMessage("OK, createFFmpegCore=" + typeof self.createFFmpegCore); } catch(e) { postMessage("FAIL: " + e.message); }';
+    var w = new Worker(URL.createObjectURL(new Blob([code])));
+    w.onmessage = function(e) { log("Classic Worker: " + e.data); w.terminate(); resolve(); };
+    w.onerror = function(e) { log("Classic Worker ERROR: " + e.message); resolve(); };
+    setTimeout(function() { log("Classic Worker: TIMEOUT"); w.terminate(); resolve(); }, 10000);
+  });
+
+  log("");
+  log("=== TEST 3: import() en Worker module (real file) ===");
+  await new Promise(function(resolve) {
+    var code = 'self.onmessage = async function(e) { try { self.postMessage("import-start"); var mod = await import("/ffmpeg/ffmpeg-core.js"); self.postMessage("import-done, default=" + typeof mod.default); } catch(err) { self.postMessage("import-error: " + err.message); } };';
+    var w = new Worker(URL.createObjectURL(new Blob([code], {type:"text/javascript"})), {type:"module"});
+    w.onmessage = function(e) { log("Module Worker: " + e.data); if (e.data.indexOf("done") > -1 || e.data.indexOf("error") > -1) { w.terminate(); resolve(); } };
+    w.onerror = function(e) { log("Module Worker ERROR: " + (e.message || "unknown")); w.terminate(); resolve(); };
+    w.postMessage("go");
+    setTimeout(function() { log("Module Worker: TIMEOUT"); w.terminate(); resolve(); }, 15000);
+  });
+
+  log("");
+  log("=== TEST 4: FFmpeg.load() real ===");
+  try {
+    var FFmod = await import("https://unpkg.com/@ffmpeg/ffmpeg@0.12.15/dist/esm/index.js");
+    var ffmpeg = new FFmod.FFmpeg();
+    ffmpeg.on("log", function(e) { log("[ffmpeg-log] " + e.message); });
+    log("Llamando ffmpeg.load()...");
+    var timeout = new Promise(function(_, rej) { setTimeout(function() { rej(new Error("TIMEOUT 30s")); }, 30000); });
+    var load = ffmpeg.load({ coreURL: "/ffmpeg/ffmpeg-core.js", wasmURL: "/ffmpeg/ffmpeg-core.wasm" });
+    await Promise.race([load, timeout]);
+    log("ffmpeg.load() OK!");
+    ffmpeg.terminate();
+  } catch(e) {
+    log("ffmpeg.load() FAIL: " + e.message);
+  }
+
+  log("");
+  log("=== DONE ===");
+})();
+</script>
+</body>
+</html>
