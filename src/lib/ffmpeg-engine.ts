@@ -60,13 +60,13 @@ export async function preloadFFmpeg(): Promise<boolean> {
 
   if (loadPromise) return loadPromise;
 
-  setState("loading", "Verificando SharedArrayBuffer...");
+  setState("loading", "Verificando entorno...");
   log("Inicio de precarga");
 
   loadPromise = (async () => {
     try {
       if (typeof SharedArrayBuffer === "undefined") {
-        const msg = "SharedArrayBuffer no disponible — se requieren headers COEP/COOP";
+        const msg = "SharedArrayBuffer no disponible";
         log(`ERROR: ${msg}`);
         setState("error", msg);
         return false;
@@ -78,7 +78,7 @@ export async function preloadFFmpeg(): Promise<boolean> {
         new SharedArrayBuffer(1);
         log("SharedArrayBuffer OK (constructor funcional)");
       } catch {
-        const msg = "SharedArrayBuffer definido pero bloqueado por el navegador";
+        const msg = "SharedArrayBuffer bloqueado por el navegador";
         log(`ERROR: ${msg}`);
         setState("error", msg);
         return false;
@@ -87,41 +87,23 @@ export async function preloadFFmpeg(): Promise<boolean> {
       setState("loading", "Importando módulos FFmpeg...");
       const t0 = performance.now();
       const { FFmpeg } = await import("@ffmpeg/ffmpeg");
-      const { toBlobURL, fetchFile } = await import("@ffmpeg/util");
+      const { fetchFile } = await import("@ffmpeg/util");
       fetchFileFn = fetchFile;
       log(`Módulos importados en ${(performance.now() - t0).toFixed(0)}ms`);
 
-      const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
-
-      setState("loading", "Descargando ffmpeg-core.js...");
-      const t1 = performance.now();
-      const coreURL = await withTimeout(
-        toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-        30_000,
-        "ffmpeg-core.js"
-      );
-      log(`ffmpeg-core.js descargado en ${(performance.now() - t1).toFixed(0)}ms`);
-
-      setState("loading", "Descargando ffmpeg-core.wasm (~30MB)...");
-      const t2 = performance.now();
-      const wasmURL = await withTimeout(
-        toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
-        120_000,
-        "ffmpeg-core.wasm"
-      );
-      const wasmMs = (performance.now() - t2).toFixed(0);
-      log(`ffmpeg-core.wasm descargado en ${wasmMs}ms`);
-
       setState("loading", "Inicializando motor WASM...");
-      log("Llamando ffmpeg.load()...");
+      log("Llamando ffmpeg.load() con archivos same-origin...");
       const ffmpeg = new FFmpeg();
-      const t3 = performance.now();
+      const t1 = performance.now();
       await withTimeout(
-        ffmpeg.load({ coreURL, wasmURL }),
-        30_000,
+        ffmpeg.load({
+          coreURL: "/ffmpeg/ffmpeg-core.js",
+          wasmURL: "/ffmpeg/ffmpeg-core.wasm",
+        }),
+        60_000,
         "ffmpeg.load()"
       );
-      log(`Motor inicializado en ${(performance.now() - t3).toFixed(0)}ms`);
+      log(`Motor inicializado en ${(performance.now() - t1).toFixed(0)}ms`);
 
       ffmpegInstance = ffmpeg;
       const total = ((performance.now() - t0) / 1000).toFixed(1);
