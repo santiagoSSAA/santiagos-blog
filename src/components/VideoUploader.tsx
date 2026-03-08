@@ -3,6 +3,12 @@
 import { useState, useRef, useCallback, useEffect, type ChangeEvent, type DragEvent } from "react";
 import { Upload, Loader2, Check, AlertCircle, Film, XCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import {
+  preloadFFmpeg,
+  getFFmpegInstance,
+  getFetchFile,
+  onFFmpegStateChange,
+} from "@/lib/ffmpeg-engine";
 
 type UploadState =
   | "idle"
@@ -26,46 +32,10 @@ function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let ffmpegSingleton: any = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let fetchFileFn: any = null;
-let ffmpegLoadPromise: Promise<boolean> | null = null;
-
-async function ensureFFmpegLoaded(): Promise<boolean> {
-  if (ffmpegSingleton?.loaded) return true;
-
-  if (ffmpegLoadPromise) return ffmpegLoadPromise;
-
-  ffmpegLoadPromise = (async () => {
-    try {
-      if (typeof SharedArrayBuffer === "undefined") return false;
-
-      const { FFmpeg } = await import("@ffmpeg/ffmpeg");
-      const { toBlobURL, fetchFile } = await import("@ffmpeg/util");
-      fetchFileFn = fetchFile;
-
-      const ffmpeg = new FFmpeg();
-      const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
-      });
-
-      ffmpegSingleton = ffmpeg;
-      return true;
-    } catch {
-      ffmpegLoadPromise = null;
-      return false;
-    }
-  })();
-
-  return ffmpegLoadPromise;
-}
-
 export function VideoUploader({ onUpload }: VideoUploaderProps) {
   const [state, setState] = useState<UploadState>("idle");
   const [ffmpegStatus, setFfmpegStatus] = useState<FFmpegStatus>("loading");
+  const [ffmpegDetail, setFfmpegDetail] = useState<string>("");
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
   const [dragActive, setDragActive] = useState(false);
@@ -78,9 +48,16 @@ export function VideoUploader({ onUpload }: VideoUploaderProps) {
   const cancelledRef = useRef(false);
 
   useEffect(() => {
-    ensureFFmpegLoaded().then((ok) => {
-      setFfmpegStatus(ok ? "ready" : "unavailable");
+    const unsubscribe = onFFmpegStateChange((engineState, detail) => {
+      if (engineState === "ready") setFfmpegStatus("ready");
+      else if (engineState === "error") setFfmpegStatus("unavailable");
+      else setFfmpegStatus("loading");
+      setFfmpegDetail(detail ?? "");
     });
+
+    preloadFFmpeg();
+
+    return unsubscribe;
   }, []);
 
   const handleCancel = useCallback(() => {
@@ -111,7 +88,10 @@ export function VideoUploader({ onUpload }: VideoUploaderProps) {
         return;
       }
 
-      if (ffmpegStatus !== "ready" || !ffmpegSingleton) {
+      const ffmpeg = getFFmpegInstance();
+      const fetchFile = getFetchFile();
+
+      if (!ffmpeg || !fetchFile) {
         setError(
           "El motor de compresión no está disponible. " +
           "Intenta desde /admin/new o usa Chrome/Firefox con las DevTools cerradas."
@@ -128,15 +108,12 @@ export function VideoUploader({ onUpload }: VideoUploaderProps) {
         setState("compressing");
         setProgress(0);
 
-        const ffmpeg = ffmpegSingleton;
-
         ffmpeg.off("progress");
         ffmpeg.on("progress", ({ progress: p }: { progress: number }) => {
           setProgress(Math.round(p * 100));
         });
 
-        await ffmpeg.writeFile("input.mp4", await fetchFileFn(file));
-
+        await ffmpeg.writeFile("input.mp4", await fetchFile(file));
         if (cancelledRef.current) return;
 
         await ffmpeg.exec([
@@ -150,7 +127,6 @@ export function VideoUploader({ onUpload }: VideoUploaderProps) {
           "-movflags", "+faststart",
           "output.mp4",
         ]);
-
         if (cancelledRef.current) return;
 
         const data = await ffmpeg.readFile("output.mp4");
@@ -163,7 +139,6 @@ export function VideoUploader({ onUpload }: VideoUploaderProps) {
 
         setState("uploading");
         setProgress(0);
-
         if (cancelledRef.current) return;
 
         const supabase = createClient();
@@ -186,12 +161,10 @@ export function VideoUploader({ onUpload }: VideoUploaderProps) {
       } catch (err) {
         if (cancelledRef.current) return;
         setState("error");
-        setError(
-          err instanceof Error ? err.message : "Error al procesar el video."
-        );
+        setError(err instanceof Error ? err.message : "Error al procesar el video.");
       }
     },
-    [onUpload, ffmpegStatus]
+    [onUpload]
   );
 
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
@@ -244,13 +217,6 @@ export function VideoUploader({ onUpload }: VideoUploaderProps) {
     </button>
   );
 
-  const statusLabel =
-    ffmpegStatus === "loading"
-      ? "Preparando motor de compresión..."
-      : ffmpegStatus === "ready"
-        ? "Motor listo · Se comprimirá a 720p"
-        : "Motor no disponible";
-
   const statusColor =
     ffmpegStatus === "ready"
       ? "text-emerald-500"
@@ -289,10 +255,11 @@ export function VideoUploader({ onUpload }: VideoUploaderProps) {
               {ffmpegStatus === "loading" && (
                 <span className="inline-flex items-center gap-1">
                   <Loader2 size={10} className="animate-spin" />
-                  {statusLabel}
+                  {ffmpegDetail || "Preparando motor de compresión..."}
                 </span>
               )}
-              {ffmpegStatus !== "loading" && statusLabel}
+              {ffmpegStatus === "ready" && (ffmpegDetail || "Motor listo · Se comprimirá a 720p")}
+              {ffmpegStatus === "unavailable" && (ffmpegDetail || "Motor no disponible")}
             </p>
           </div>
           <input

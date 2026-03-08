@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
-import { LayoutDashboard, PenSquare, LogOut, Loader2 } from "lucide-react";
+import { LayoutDashboard, PenSquare, LogOut, Loader2, Film } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { preloadFFmpeg, onFFmpegStateChange } from "@/lib/ffmpeg-engine";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -19,6 +20,7 @@ export default function AdminLayout({
 }) {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
+  const [ffmpegState, setFfmpegState] = useState<{ state: string; detail?: string }>({ state: "idle" });
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
@@ -48,6 +50,13 @@ export default function AdminLayout({
 
     return () => subscription.unsubscribe();
   }, [supabase, router, pathname]);
+
+  useEffect(() => {
+    preloadFFmpeg();
+    return onFFmpegStateChange((state, detail) => {
+      setFfmpegState({ state, detail });
+    });
+  }, []);
 
   if (pathname === "/admin/login") {
     return <>{children}</>;
@@ -104,7 +113,34 @@ export default function AdminLayout({
           })}
         </nav>
 
-        <div className="border-t border-zinc-800 p-3">
+        <div className="border-t border-zinc-800 p-3 space-y-2">
+          <div className="flex items-center gap-2.5 rounded-lg px-3 py-2 bg-zinc-800/50">
+            <Film className="h-4 w-4 text-zinc-500 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <div
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full shrink-0",
+                    ffmpegState.state === "ready" && "bg-emerald-500",
+                    ffmpegState.state === "loading" && "bg-amber-500 animate-pulse",
+                    ffmpegState.state === "error" && "bg-red-500",
+                    ffmpegState.state === "idle" && "bg-zinc-600"
+                  )}
+                />
+                <span className="text-xs font-medium text-zinc-400 truncate">
+                  {ffmpegState.state === "idle" && "Compresor inactivo"}
+                  {ffmpegState.state === "loading" && "Cargando compresor..."}
+                  {ffmpegState.state === "ready" && "Compresor listo"}
+                  {ffmpegState.state === "error" && "Compresor no disponible"}
+                </span>
+              </div>
+              {ffmpegState.detail && ffmpegState.state === "loading" && (
+                <p className="text-[10px] text-zinc-500 truncate mt-0.5">
+                  {ffmpegState.detail}
+                </p>
+              )}
+            </div>
+          </div>
           <button
             onClick={handleSignOut}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-zinc-200"
