@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { preloadFFmpeg, onFFmpegStateChange } from "@/lib/ffmpeg-engine";
+import {
+  preloadCompressionRuntime,
+  onCompressionRuntimeStateChange,
+} from "@/lib/services/video-compression-runtime";
 
 export function useFFmpegStatus() {
   const [ffmpegState, setFfmpegState] = useState<{ state: string; detail?: string }>({
@@ -7,8 +10,8 @@ export function useFFmpegStatus() {
   });
 
   useEffect(() => {
-    void preloadFFmpeg();
-    return onFFmpegStateChange((state, detail) => {
+    void preloadCompressionRuntime();
+    return onCompressionRuntimeStateChange((state, detail) => {
       setFfmpegState({ state, detail });
     });
   }, []);

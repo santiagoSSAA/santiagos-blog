@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { preloadFFmpeg, onFFmpegStateChange } from "@/lib/ffmpeg-engine";
-import { VIDEO_DEFAULTS, VIDEO_MAX_SIZE } from "@/lib/config/compression";
+import {
+  preloadCompressionRuntime,
+  onCompressionRuntimeStateChange,
+} from "@/lib/services/video-compression-runtime";
+import { VIDEO_DEFAULTS, VIDEO_MAX_SIZE, buildVideoObjectKey } from "@/lib/config/compression";
 import { createFFmpegCompressor } from "@/lib/services/ffmpeg-compressor";
 import { createBrowserStorageService } from "@/lib/services/supabase-storage-browser";
 
@@ -63,14 +66,14 @@ export function useVideoUpload(onUpload: (url: string) => void): UseVideoUploadR
   }, [reset]);
 
   useEffect(() => {
-    const unsubscribe = onFFmpegStateChange((engineState, detail) => {
+    const unsubscribe = onCompressionRuntimeStateChange((engineState, detail) => {
       if (engineState === "ready") setFfmpegStatus("ready");
       else if (engineState === "error") setFfmpegStatus("unavailable");
       else setFfmpegStatus("loading");
       setFfmpegDetail(detail ?? "");
     });
 
-    void preloadFFmpeg();
+    void preloadCompressionRuntime();
 
     return () => {
       unsubscribe();
@@ -123,7 +126,7 @@ export function useVideoUpload(onUpload: (url: string) => void): UseVideoUploadR
         if (cancelledRef.current) return;
 
         const storage = createBrowserStorageService();
-        const fileName = `videos/${Date.now()}-${file.name}`;
+        const fileName = buildVideoObjectKey(file);
         const uploaded = await storage.upload(compressed.blob, fileName, "video/mp4");
 
         if (cancelledRef.current) return;

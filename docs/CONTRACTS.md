@@ -69,7 +69,12 @@ export interface StorageService {
 - `getPublicUrl()` construye la URL pública dado un path relativo.
 - `extractPath()` reemplaza la función `extractStoragePath` actual de `utils.ts`. Extrae el path relativo de una URL pública de Supabase Storage.
 
-### Implementación: `src/lib/services/supabase-storage.ts`
+### Implementación: browser y server (split obligatorio)
+
+- **Browser:** `src/lib/services/supabase-storage-browser.ts` — `createBrowserStorageService()` — solo lo importan hooks/components client.
+- **Server:** `src/lib/services/supabase-storage-server.ts` — `createServerStorageService()` — solo API routes / server.
+
+Ejemplo browser (misma firma `StorageService`):
 
 ```typescript
 import { createClient } from "@/lib/supabase";
@@ -147,6 +152,16 @@ export interface VideoCompressor {
   isAvailable(): boolean;
 }
 ```
+
+### Runtime (precarga / estado) — `src/lib/services/video-compression-runtime.ts`
+
+Único punto aparte de `ffmpeg-compressor` que importa `@/lib/ffmpeg-engine`. Los hooks usan este facade:
+
+- `preloadCompressionRuntime(): Promise<boolean>`
+- `onCompressionRuntimeStateChange(fn): () => void`
+- `getCompressionRuntimeState()` — snapshot `{ state, detail? }`
+
+Estados: `"idle" | "loading" | "ready" | "error"`.
 
 ### Implementación: `src/lib/services/ffmpeg-compressor.ts`
 
@@ -295,8 +310,8 @@ export function useVideoUpload(onUpload: (url: string) => void): UseVideoUploadR
 ```
 
 Este hook:
-- Suscribe a `onFFmpegStateChange` en mount.
-- Llama `preloadFFmpeg()` en mount.
+- Suscribe a `onCompressionRuntimeStateChange` en mount (facade; no importar `ffmpeg-engine` en hooks).
+- Llama `preloadCompressionRuntime()` en mount.
 - `processFile()` valida → comprime vía `VideoCompressor` → sube vía `StorageService` → llama `onUpload(url)`.
 - Gestiona cancelación con `cancelledRef`.
 - Lee config de `lib/config/compression.ts`.
@@ -347,6 +362,12 @@ export const IMAGE_DEFAULTS: ImageCompressionConfig = {
 
 export const VIDEO_MAX_SIZE = 500 * 1024 * 1024; // 500MB
 export const IMAGE_MAX_SIZE = 20 * 1024 * 1024;  // 20MB
+
+export const VIDEO_STORAGE_PREFIX = "videos";
+
+export function buildVideoObjectKey(file: File): string {
+  return `${VIDEO_STORAGE_PREFIX}/${Date.now()}-${file.name}`;
+}
 ```
 
 ### `rate-limit.ts`
@@ -376,7 +397,7 @@ Reemplaza la interfaz actual donde `initialData` es siempre opcional.
 
 Usar para verificar que todas las interfaces están implementadas:
 
-- [ ] `StorageService` → `createBrowserStorageService()` + `createServerStorageService()`
+- [ ] `StorageService` → `supabase-storage-browser.ts` + `supabase-storage-server.ts`
 - [ ] `VideoCompressor` → `createFFmpegCompressor()`
 - [ ] `ImageCompressor` → `createCanvasImageCompressor()`
 - [ ] `RateLimiter` → `createInMemoryRateLimiter()`

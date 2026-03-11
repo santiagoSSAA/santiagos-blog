@@ -16,3 +16,9 @@ export const IMAGE_DEFAULTS: ImageCompressionConfig = {
 
 export const VIDEO_MAX_SIZE = 500 * 1024 * 1024;
 export const IMAGE_MAX_SIZE = 20 * 1024 * 1024;
+
+export const VIDEO_STORAGE_PREFIX = "videos";
+
+export function buildVideoObjectKey(file: File): string {
+  return `${VIDEO_STORAGE_PREFIX}/${Date.now()}-${file.name}`;
+}

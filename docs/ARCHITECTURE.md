@@ -48,7 +48,8 @@ src/
 │   │   └── supabase-newsletter-repository.ts
 │   ├── services/
 │   │   ├── storage.ts                 # Interface StorageService
-│   │   ├── supabase-storage.ts        # Implementación Supabase
+│   │   ├── supabase-storage-browser.ts / supabase-storage-server.ts
+│   │   ├── video-compression-runtime.ts  # Facade preload/subscribe (solo ffmpeg-engine aquí + ffmpeg-compressor)
 │   │   ├── compression.ts            # Interfaces VideoCompressor + ImageCompressor
 │   │   ├── ffmpeg-compressor.ts       # Implementación FFmpeg
 │   │   ├── canvas-image-compressor.ts # Implementación Canvas→WebP
@@ -106,7 +107,7 @@ Estos imports **nunca** deben existir después de la refactorización:
 |---|---|
 | `components/*` | `@/lib/supabase`, `@/lib/supabase-server`, `@/lib/ffmpeg-engine` |
 | `app/api/*` | `@/lib/supabase`, `@/lib/supabase-server` directamente |
-| `lib/hooks/*` | `@/lib/supabase`, `@/lib/supabase-server`, `@/lib/ffmpeg-engine` |
+| `lib/hooks/*` | `@/lib/supabase`, `@/lib/supabase-server`, `@/lib/ffmpeg-engine` (usar `video-compression-runtime` en su lugar) |
 
 ### Quién importa las implementaciones concretas
 
@@ -116,7 +117,7 @@ Solo estos archivos pueden importar módulos de infraestructura:
 |---|---|
 | `@/lib/supabase` | `supabase-storage.ts` (browser) |
 | `@/lib/supabase-server` | `supabase-post-repository.ts`, `supabase-newsletter-repository.ts` |
-| `@/lib/ffmpeg-engine` | `ffmpeg-compressor.ts` |
+| `@/lib/ffmpeg-engine` | `ffmpeg-compressor.ts`, `video-compression-runtime.ts` |
 
 ### Dónde se instancian las implementaciones
 
@@ -140,7 +141,8 @@ export async function GET() {
 ```typescript
 // lib/hooks/use-video-upload.ts
 import { createFFmpegCompressor } from "@/lib/services/ffmpeg-compressor";
-import { createSupabaseStorage } from "@/lib/services/supabase-storage";
+import { createBrowserStorageService } from "@/lib/services/supabase-storage-browser";
+import { preloadCompressionRuntime, onCompressionRuntimeStateChange } from "@/lib/services/video-compression-runtime";
 import type { VideoCompressor } from "@/lib/services/compression";
 import type { StorageService } from "@/lib/services/storage";
 ```
@@ -162,6 +164,7 @@ VideoUploader.tsx (UI)
         │
         ▼
 use-video-upload.ts (Hook)
+  ├─ precarga/suscribe vía video-compression-runtime → ffmpeg-engine
   ├─ llama VideoCompressor.compress(file)
   │       │
   │       ▼
@@ -172,7 +175,7 @@ use-video-upload.ts (Hook)
   ├─ llama StorageService.upload(blob, fileName)
   │       │
   │       ▼
-  │   supabase-storage.ts → supabase.ts (browser client)
+  │   supabase-storage-browser.ts → supabase.ts (browser client)
   │       │
   │       ▼ publicUrl
   │
