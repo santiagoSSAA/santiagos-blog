@@ -1,13 +1,19 @@
-export interface Post {
-  id: string;
-  title: string;
+export interface PostSummary {
   slug: string;
+  title: string;
   excerpt: string;
-  content: string;
-  video_url: string | null;
   thumbnail_url: string | null;
-  published: boolean;
+  video_url: string | null;
   created_at: string;
+}
+
+export interface PostAdmin extends PostSummary {
+  id: string;
+  published: boolean;
+}
+
+export interface Post extends PostAdmin {
+  content: string;
   updated_at: string;
 }
 

@@ -2,20 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { generateSlug, extractStoragePath } from "@/lib/utils";
-import { createClient } from "@/lib/supabase";
+import { generateSlug } from "@/lib/utils";
+import { createBrowserStorageService } from "@/lib/services/supabase-storage-browser";
 import { VideoUploader } from "@/components/VideoUploader";
 import { ThumbnailUploader } from "@/components/ThumbnailUploader";
 import { Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { Post } from "@/lib/types";
 
-interface PostFormProps {
-  mode: "create" | "edit";
-  initialData?: Post;
-}
+type PostFormProps =
+  | { mode: "create" }
+  | { mode: "edit"; initialData: Post };
 
-export function PostForm({ mode, initialData }: PostFormProps) {
+export function PostForm(props: PostFormProps) {
+  const { mode } = props;
+  const initialData = mode === "edit" ? props.initialData : undefined;
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [excerpt, setExcerpt] = useState("");
@@ -40,10 +41,10 @@ export function PostForm({ mode, initialData }: PostFormProps) {
   }, [initialData]);
 
   const deleteFromStorage = async (url: string) => {
-    const path = extractStoragePath(url);
+    const storage = createBrowserStorageService();
+    const path = storage.extractPath(url);
     if (!path) return;
-    const supabase = createClient();
-    await supabase.storage.from("videos").remove([path]);
+    await storage.remove([path]);
   };
 
   const handleRemoveVideo = async () => {

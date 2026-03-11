@@ -6,7 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { LayoutDashboard, PenSquare, LogOut, Loader2, Film } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { preloadFFmpeg, onFFmpegStateChange } from "@/lib/ffmpeg-engine";
+import { useFFmpegStatus } from "@/lib/hooks/use-ffmpeg-status";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -20,7 +20,7 @@ export default function AdminLayout({
 }) {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
-  const [ffmpegState, setFfmpegState] = useState<{ state: string; detail?: string }>({ state: "idle" });
+  const ffmpegState = useFFmpegStatus();
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
@@ -50,13 +50,6 @@ export default function AdminLayout({
 
     return () => subscription.unsubscribe();
   }, [supabase, router, pathname]);
-
-  useEffect(() => {
-    preloadFFmpeg();
-    return onFFmpegStateChange((state, detail) => {
-      setFfmpegState({ state, detail });
-    });
-  }, []);
 
   if (pathname === "/admin/login") {
     return <>{children}</>;

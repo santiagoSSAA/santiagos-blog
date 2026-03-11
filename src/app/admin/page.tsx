@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { formatDate } from "@/lib/utils";
-import type { Post } from "@/lib/types";
+import type { PostAdmin } from "@/lib/types";
 import {
   FileText,
   Eye,
@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 export default function AdminDashboard() {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<PostAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const supabase = createClient();

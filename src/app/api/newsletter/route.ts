@@ -1,28 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { NEWSLETTER_RATE_LIMIT } from "@/lib/config/rate-limit";
+import { createInMemoryRateLimiter } from "@/lib/services/rate-limiter";
+import { createNewsletterRepository } from "@/lib/repositories/supabase-newsletter-repository";
 import { NewsletterSchema } from "@/lib/validators";
 
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW = 60_000;
-const RATE_LIMIT_MAX = 5;
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-    return false;
-  }
-
-  entry.count++;
-  return entry.count > RATE_LIMIT_MAX;
-}
+const rateLimiter = createInMemoryRateLimiter(
+  NEWSLETTER_RATE_LIMIT.windowMs,
+  NEWSLETTER_RATE_LIMIT.maxRequests
+);
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for") ?? "unknown";
 
-  if (isRateLimited(ip)) {
+  if (rateLimiter.isLimited(ip)) {
     return NextResponse.json(
       { error: "Demasiadas solicitudes. Intenta en un minuto." },
       { status: 429 }
@@ -40,24 +30,18 @@ export async function POST(request: NextRequest) {
   }
 
   const email = parsed.data.email.toLowerCase();
-  const supabase = createServerSupabaseClient();
 
-  const { error } = await supabase
-    .from("newsletter_subscribers")
-    .insert({ email });
+  try {
+    const repo = createNewsletterRepository();
+    const result = await repo.subscribe(email);
 
-  if (error) {
-    if (error.code === "23505") {
-      return NextResponse.json(
-        { message: "Ya estás suscrito" },
-        { status: 200 }
-      );
+    if (result.alreadyExists) {
+      return NextResponse.json({ message: "Ya estás suscrito" }, { status: 200 });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
 
-  return NextResponse.json(
-    { message: "¡Suscripción exitosa!" },
-    { status: 201 }
-  );
+    return NextResponse.json({ message: "¡Suscripción exitosa!" }, { status: 201 });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Server error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
