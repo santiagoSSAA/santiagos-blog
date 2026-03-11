@@ -125,16 +125,16 @@
 
 ### Pasos
 
-- [ ] **5.1** Refactorizar `src/components/VideoUploader.tsx`: eliminar imports de supabase y ffmpeg-engine, usar `useVideoUpload`. Solo UI.
-- [ ] **5.2** Refactorizar `src/components/ThumbnailUploader.tsx`: eliminar `compressImage` embebida, eliminar imports de supabase, usar `useThumbnailUpload`. Solo UI.
-- [ ] **5.3** Refactorizar `src/components/PostForm.tsx`: eliminar `deleteFromStorage` y import de `createClient`. Mover eliminación de storage a una callback prop o al hook.
-- [ ] **5.4** Refactorizar `src/app/api/posts/route.ts`: usar `createPostRepository()` en vez de Supabase directo.
-- [ ] **5.5** Refactorizar `src/app/api/posts/[id]/route.ts`: usar `createPostRepository()` + `createServerStorageService()`.
-- [ ] **5.6** Refactorizar `src/app/api/newsletter/route.ts`: usar `createInMemoryRateLimiter()` + `createNewsletterRepository()`.
-- [ ] **5.7** Refactorizar `src/app/admin/layout.tsx`: extraer precarga de FFmpeg a un pattern más limpio (el hook ya gestiona la precarga).
-- [ ] **5.8** Limpiar `src/lib/utils.ts`: eliminar `extractStoragePath` (ahora vive en `StorageService.extractPath`). Mantener `proxyUrl` si aún se usa.
-- [ ] **5.9** Verificar build: `npm run build`
-- [ ] **5.10** Verificar reglas de importación: ningún archivo en `components/` importa de `@/lib/supabase` ni `@/lib/ffmpeg-engine`.
+- [x] **5.1** Refactorizar `src/components/VideoUploader.tsx`: eliminar imports de supabase y ffmpeg-engine, usar `useVideoUpload`. Solo UI.
+- [x] **5.2** Refactorizar `src/components/ThumbnailUploader.tsx`: eliminar `compressImage` embebida, eliminar imports de supabase, usar `useThumbnailUpload`. Solo UI.
+- [x] **5.3** Refactorizar `src/components/PostForm.tsx`: eliminar `deleteFromStorage` y import de `createClient`. Mover eliminación de storage a una callback prop o al hook.
+- [x] **5.4** Refactorizar `src/app/api/posts/route.ts`: usar `createPostRepository()` en vez de Supabase directo.
+- [x] **5.5** Refactorizar `src/app/api/posts/[id]/route.ts`: usar `createPostRepository()` + `createServerStorageService()`.
+- [x] **5.6** Refactorizar `src/app/api/newsletter/route.ts`: usar `createInMemoryRateLimiter()` + `createNewsletterRepository()`.
+- [x] **5.7** Refactorizar `src/app/admin/layout.tsx`: extraer precarga de FFmpeg a un pattern más limpio (el hook ya gestiona la precarga).
+- [x] **5.8** Limpiar `src/lib/utils.ts`: eliminar `extractStoragePath` (ahora vive en `StorageService.extractPath`). Mantener `proxyUrl` si aún se usa.
+- [x] **5.9** Verificar build: `npm run build`
+- [x] **5.10** Verificar reglas de importación: ningún archivo en `components/` importa de `@/lib/supabase` ni `@/lib/ffmpeg-engine`.
 
 **Archivos modificados**: 8 archivos
 

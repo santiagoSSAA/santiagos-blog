@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { preloadFFmpeg, onFFmpegStateChange } from "@/lib/ffmpeg-engine";
 import { VIDEO_DEFAULTS, VIDEO_MAX_SIZE } from "@/lib/config/compression";
 import { createFFmpegCompressor } from "@/lib/services/ffmpeg-compressor";
-import { createBrowserStorageService } from "@/lib/services/supabase-storage";
+import { createBrowserStorageService } from "@/lib/services/supabase-storage-browser";
 
 type UploadState = "idle" | "compressing" | "uploading" | "done" | "error" | "cancelled";
 type FFmpegStatus = "loading" | "ready" | "unavailable";

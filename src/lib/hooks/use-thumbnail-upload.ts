@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { IMAGE_DEFAULTS, IMAGE_MAX_SIZE } from "@/lib/config/compression";
 import { createCanvasImageCompressor } from "@/lib/services/canvas-image-compressor";
-import { createBrowserStorageService } from "@/lib/services/supabase-storage";
+import { createBrowserStorageService } from "@/lib/services/supabase-storage-browser";
 
 type UploadState = "idle" | "compressing" | "uploading" | "done" | "error" | "cancelled";
 

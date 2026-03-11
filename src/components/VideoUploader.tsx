@@ -1,24 +1,8 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect, type ChangeEvent, type DragEvent } from "react";
+import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { Upload, Loader2, Check, AlertCircle, Film, XCircle } from "lucide-react";
-import { createClient } from "@/lib/supabase";
-import {
-  preloadFFmpeg,
-  getFFmpegInstance,
-  getFetchFile,
-  onFFmpegStateChange,
-} from "@/lib/ffmpeg-engine";
-
-type UploadState =
-  | "idle"
-  | "compressing"
-  | "uploading"
-  | "done"
-  | "error"
-  | "cancelled";
-
-type FFmpegStatus = "loading" | "ready" | "unavailable";
+import { useVideoUpload } from "@/lib/hooks/use-video-upload";
 
 interface VideoUploaderProps {
   onUpload: (url: string) => void;
@@ -33,150 +17,31 @@ function formatBytes(bytes: number): string {
 }
 
 export function VideoUploader({ onUpload }: VideoUploaderProps) {
-  const [state, setState] = useState<UploadState>("idle");
-  const [ffmpegStatus, setFfmpegStatus] = useState<FFmpegStatus>("loading");
-  const [ffmpegDetail, setFfmpegDetail] = useState<string>("");
-  const [progress, setProgress] = useState(0);
-  const [error, setError] = useState("");
   const [dragActive, setDragActive] = useState(false);
-  const [fileInfo, setFileInfo] = useState<{
-    name: string;
-    originalSize: number;
-    compressedSize?: number;
-  } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const cancelledRef = useRef(false);
 
-  useEffect(() => {
-    const unsubscribe = onFFmpegStateChange((engineState, detail) => {
-      if (engineState === "ready") setFfmpegStatus("ready");
-      else if (engineState === "error") setFfmpegStatus("unavailable");
-      else setFfmpegStatus("loading");
-      setFfmpegDetail(detail ?? "");
-    });
-
-    preloadFFmpeg();
-
-    return unsubscribe;
-  }, []);
-
-  const handleCancel = useCallback(() => {
-    cancelledRef.current = true;
-    setState("cancelled");
-    setTimeout(() => {
-      setState("idle");
-      setProgress(0);
-      setError("");
-      setFileInfo(null);
-      cancelledRef.current = false;
-      if (inputRef.current) inputRef.current.value = "";
-    }, 1500);
-  }, []);
-
-  const processFile = useCallback(
-    async (file: File) => {
-      if (!file.type.startsWith("video/")) {
-        setError("Solo se permiten archivos de video.");
-        setState("error");
-        return;
-      }
-
-      const MAX_SIZE = 500 * 1024 * 1024;
-      if (file.size > MAX_SIZE) {
-        setError(`El archivo es muy grande (${formatBytes(file.size)}). Máximo: 500MB.`);
-        setState("error");
-        return;
-      }
-
-      const ffmpeg = getFFmpegInstance();
-      const fetchFile = getFetchFile();
-
-      if (!ffmpeg || !fetchFile) {
-        setError(
-          "El motor de compresión no está disponible. " +
-          "Intenta desde /admin/new o usa Chrome/Firefox con las DevTools cerradas."
-        );
-        setState("error");
-        return;
-      }
-
-      cancelledRef.current = false;
-      setFileInfo({ name: file.name, originalSize: file.size });
-      setError("");
-
-      try {
-        setState("compressing");
-        setProgress(0);
-
-        ffmpeg.off("progress");
-        ffmpeg.on("progress", ({ progress: p }: { progress: number }) => {
-          setProgress(Math.round(p * 100));
-        });
-
-        await ffmpeg.writeFile("input.mp4", await fetchFile(file));
-        if (cancelledRef.current) return;
-
-        await ffmpeg.exec([
-          "-i", "input.mp4",
-          "-vf", "scale=-2:720",
-          "-c:v", "libx264",
-          "-crf", "28",
-          "-preset", "fast",
-          "-c:a", "aac",
-          "-b:a", "128k",
-          "-movflags", "+faststart",
-          "output.mp4",
-        ]);
-        if (cancelledRef.current) return;
-
-        const data = await ffmpeg.readFile("output.mp4");
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const compressedBlob = new Blob([data as any], { type: "video/mp4" });
-
-        setFileInfo((prev) =>
-          prev ? { ...prev, compressedSize: compressedBlob.size } : prev
-        );
-
-        setState("uploading");
-        setProgress(0);
-        if (cancelledRef.current) return;
-
-        const supabase = createClient();
-        const fileName = `videos/${Date.now()}-${file.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("videos")
-          .upload(fileName, compressedBlob, { contentType: "video/mp4" });
-
-        if (cancelledRef.current) return;
-        if (uploadError) throw uploadError;
-
-        if (uploadData) {
-          const { data: urlData } = supabase.storage
-            .from("videos")
-            .getPublicUrl(uploadData.path);
-          onUpload(urlData.publicUrl);
-        }
-
-        setState("done");
-      } catch (err) {
-        if (cancelledRef.current) return;
-        setState("error");
-        setError(err instanceof Error ? err.message : "Error al procesar el video.");
-      }
-    },
-    [onUpload]
-  );
+  const {
+    state,
+    ffmpegStatus,
+    ffmpegDetail,
+    progress,
+    error,
+    fileInfo,
+    processFile,
+    cancel,
+    reset,
+  } = useVideoUpload(onUpload);
 
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) processFile(file);
+    if (file) void processFile(file);
   }
 
   function handleDrop(e: DragEvent) {
     e.preventDefault();
     setDragActive(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) processFile(file);
+    if (file) void processFile(file);
   }
 
   function handleDragOver(e: DragEvent) {
@@ -189,27 +54,22 @@ export function VideoUploader({ onUpload }: VideoUploaderProps) {
     setDragActive(false);
   }
 
-  function reset() {
-    setState("idle");
-    setProgress(0);
-    setError("");
-    setFileInfo(null);
+  function handleReset() {
+    reset();
     if (inputRef.current) inputRef.current.value = "";
   }
 
   const savings =
     fileInfo?.originalSize && fileInfo?.compressedSize
       ? Math.round(
-          ((fileInfo.originalSize - fileInfo.compressedSize) /
-            fileInfo.originalSize) *
-            100
+          ((fileInfo.originalSize - fileInfo.compressedSize) / fileInfo.originalSize) * 100
         )
       : null;
 
   const cancelButton = (
     <button
       type="button"
-      onClick={handleCancel}
+      onClick={cancel}
       className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
     >
       <XCircle size={16} />
@@ -293,9 +153,7 @@ export function VideoUploader({ onUpload }: VideoUploaderProps) {
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="mt-1 text-xs text-center text-zinc-500 dark:text-zinc-400">
-              {progress}%
-            </p>
+            <p className="mt-1 text-xs text-center text-zinc-500 dark:text-zinc-400">{progress}%</p>
           </div>
           {cancelButton}
         </div>
@@ -324,9 +182,7 @@ export function VideoUploader({ onUpload }: VideoUploaderProps) {
           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30">
             <XCircle size={24} className="text-amber-600 dark:text-amber-400" />
           </div>
-          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Subida cancelada
-          </p>
+          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Subida cancelada</p>
         </div>
       )}
 
@@ -348,7 +204,8 @@ export function VideoUploader({ onUpload }: VideoUploaderProps) {
             )}
           </div>
           <button
-            onClick={reset}
+            type="button"
+            onClick={handleReset}
             className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
           >
             <Film size={16} />
@@ -368,7 +225,8 @@ export function VideoUploader({ onUpload }: VideoUploaderProps) {
             </p>
           </div>
           <button
-            onClick={reset}
+            type="button"
+            onClick={handleReset}
             className="mt-2 px-4 py-2 text-sm font-medium rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
           >
             Intentar de nuevo

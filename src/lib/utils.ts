@@ -22,13 +22,6 @@ export function generateSlug(title: string): string {
     .replace(/(^-|-$)+/g, "");
 }
 
-export function extractStoragePath(publicUrl: string): string | null {
-  const marker = "/storage/v1/object/public/videos/";
-  const idx = publicUrl.indexOf(marker);
-  if (idx === -1) return null;
-  return publicUrl.substring(idx + marker.length);
-}
-
 export function proxyUrl(url: string): string {
   if (!url || !url.includes(".supabase.co")) return url;
   return `/api/media?url=${encodeURIComponent(url)}`;
