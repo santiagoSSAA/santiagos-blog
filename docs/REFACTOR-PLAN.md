@@ -77,11 +77,11 @@
 
 ### Pasos
 
-- [ ] **3.1** Crear `src/lib/repositories/post-repository.ts` (interface `PostRepository`)
-- [ ] **3.2** Crear `src/lib/repositories/supabase-post-repository.ts` (`createPostRepository`)
-- [ ] **3.3** Crear `src/lib/repositories/newsletter-repository.ts` (interface `NewsletterRepository`)
-- [ ] **3.4** Crear `src/lib/repositories/supabase-newsletter-repository.ts` (`createNewsletterRepository`)
-- [ ] **3.5** Verificar build: `npm run build`
+- [x] **3.1** Crear `src/lib/repositories/post-repository.ts` (interface `PostRepository`)
+- [x] **3.2** Crear `src/lib/repositories/supabase-post-repository.ts` (`createPostRepository`)
+- [x] **3.3** Crear `src/lib/repositories/newsletter-repository.ts` (interface `NewsletterRepository`)
+- [x] **3.4** Crear `src/lib/repositories/supabase-newsletter-repository.ts` (`createNewsletterRepository`)
+- [x] **3.5** Verificar build: `npm run build`
 
 **Archivos creados**: 4 archivos nuevos en `src/lib/repositories/`
 
