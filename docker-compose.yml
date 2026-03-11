@@ -1,0 +1,24 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: production
+
+  smoke:
+    image: curlimages/curl:8.5.0
+    depends_on:
+      app:
+        condition: service_started
+    profiles:
+      - smoke
+    environment:
+      BASE_URL: http://app:3000
+    volumes:
+      - ./scripts/smoke.sh:/scripts/smoke.sh:ro
+    entrypoint: ["/bin/sh", "/scripts/smoke.sh"]

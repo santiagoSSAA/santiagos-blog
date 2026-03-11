@@ -148,15 +148,18 @@
 
 **Objetivo**: Confirmar que la arquitectura es correcta y todo funciona.
 
-- [ ] **6.1** Verificar build limpio: `npm run build`
-- [ ] **6.2** Verificar reglas de importación (grep por imports prohibidos):
+- [x] **6.1** Verificar build limpio: `npm run build`
+- [x] **6.2** Verificar reglas de importación (grep por imports prohibidos):
   - `grep -r "from.*@/lib/supabase" src/components/` → debe retornar vacío
   - `grep -r "from.*@/lib/ffmpeg-engine" src/components/` → debe retornar vacío
   - `grep -r "from.*@/lib/supabase" src/app/api/` → debe retornar vacío (solo los repos lo usan)
-- [ ] **6.3** Verificar que la app funciona en dev: `npm run dev`
-- [ ] **6.4** Commit final en branch `refactor/solid`
+- [x] **6.3** Verificar que la app funciona en dev: `npm run dev` (manual o `docker compose -f docker-compose.dev.yml up`)
+- [x] **6.4** Commit final en branch `refactor/solid`
+- [x] **6.5** Docker Compose producción (`docker-compose.yml`) + dev (`docker-compose.dev.yml`) + smoke (`scripts/smoke.sh`, profile `smoke`)
 
-**Criterio de avance**: Build limpio, imports correctos, app funcional.
+**Criterio de avance**: Build limpio, imports correctos, app funcional, smoke en CI/local vía Compose.
+
+**Docker / smoke**: ver `docs/DOCKER.md`.
 
 ---
 
