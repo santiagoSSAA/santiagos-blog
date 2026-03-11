@@ -10,12 +10,13 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { Post } from "@/lib/types";
 
-interface PostFormProps {
-  mode: "create" | "edit";
-  initialData?: Post;
-}
+type PostFormProps =
+  | { mode: "create" }
+  | { mode: "edit"; initialData: Post };
 
-export function PostForm({ mode, initialData }: PostFormProps) {
+export function PostForm(props: PostFormProps) {
+  const { mode } = props;
+  const initialData = mode === "edit" ? props.initialData : undefined;
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [excerpt, setExcerpt] = useState("");

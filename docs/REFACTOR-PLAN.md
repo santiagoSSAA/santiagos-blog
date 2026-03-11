@@ -10,9 +10,9 @@
 
 **Objetivo**: Punto de partida seguro.
 
-- [ ] Verificar que `npm run build` compila sin errores
-- [ ] Crear branch `refactor/solid`
-- [ ] Commit del estado actual
+- [x] Verificar que `npm run build` compila sin errores
+- [x] Crear branch `refactor/solid`
+- [x] Commit del estado actual
 
 **Criterio de avance**: Build limpio, branch creado.
 
@@ -28,12 +28,12 @@
 
 ### Pasos
 
-- [ ] **1.1** Modificar `src/lib/types.ts`: definir `PostSummary`, `PostAdmin`, `Post` (jerárquicos)
-- [ ] **1.2** Actualizar `src/components/PostCard.tsx`: cambiar tipo de props de `Post` a `PostSummary`
-- [ ] **1.3** Actualizar `src/app/admin/page.tsx`: cambiar tipo de state de `Post[]` a `PostAdmin[]`
-- [ ] **1.4** Aplicar discriminated union en `src/components/PostForm.tsx` para `PostFormProps`
-- [ ] **1.5** Ajustar `src/app/admin/edit/[id]/page.tsx` para que pase props compatibles con el nuevo tipo
-- [ ] **1.6** Verificar build: `npm run build`
+- [x] **1.1** Modificar `src/lib/types.ts`: definir `PostSummary`, `PostAdmin`, `Post` (jerárquicos)
+- [x] **1.2** Actualizar `src/components/PostCard.tsx`: cambiar tipo de props de `Post` a `PostSummary`
+- [x] **1.3** Actualizar `src/app/admin/page.tsx`: cambiar tipo de state de `Post[]` a `PostAdmin[]`
+- [x] **1.4** Aplicar discriminated union en `src/components/PostForm.tsx` para `PostFormProps`
+- [x] **1.5** Ajustar `src/app/admin/edit/[id]/page.tsx` para que pase props compatibles con el nuevo tipo
+- [x] **1.6** Verificar build: `npm run build`
 
 **Archivos modificados**: `types.ts`, `PostCard.tsx`, `admin/page.tsx`, `PostForm.tsx`, `edit/[id]/page.tsx`
 

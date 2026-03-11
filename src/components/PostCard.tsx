@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Video } from "lucide-react";
-import { type Post } from "@/lib/types";
+import { type PostSummary } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 
 interface PostCardProps {
-  post: Post;
+  post: PostSummary;
 }
 
 export function PostCard({ post }: PostCardProps) {
