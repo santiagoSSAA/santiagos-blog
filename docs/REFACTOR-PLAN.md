@@ -101,11 +101,11 @@
 
 ### Pasos
 
-- [ ] **4.1** Crear `src/lib/config/compression.ts` (VIDEO_DEFAULTS, IMAGE_DEFAULTS, MAX_SIZES)
-- [ ] **4.2** Crear `src/lib/config/rate-limit.ts` (NEWSLETTER_RATE_LIMIT)
-- [ ] **4.3** Crear `src/lib/hooks/use-video-upload.ts`
-- [ ] **4.4** Crear `src/lib/hooks/use-thumbnail-upload.ts`
-- [ ] **4.5** Verificar build: `npm run build`
+- [x] **4.1** Crear `src/lib/config/compression.ts` (VIDEO_DEFAULTS, IMAGE_DEFAULTS, MAX_SIZES)
+- [x] **4.2** Crear `src/lib/config/rate-limit.ts` (NEWSLETTER_RATE_LIMIT)
+- [x] **4.3** Crear `src/lib/hooks/use-video-upload.ts`
+- [x] **4.4** Crear `src/lib/hooks/use-thumbnail-upload.ts`
+- [x] **4.5** Verificar build: `npm run build`
 
 **Archivos creados**: 4 archivos nuevos
 
