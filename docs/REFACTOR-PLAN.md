@@ -51,13 +51,13 @@
 
 ### Pasos
 
-- [ ] **2.1** Crear `src/lib/services/storage.ts` (interface `StorageService`)
-- [ ] **2.2** Crear `src/lib/services/supabase-storage.ts` (`createBrowserStorageService` + `createServerStorageService`)
-- [ ] **2.3** Crear `src/lib/services/compression.ts` (interfaces `VideoCompressor`, `ImageCompressor` + tipos de config)
-- [ ] **2.4** Crear `src/lib/services/ffmpeg-compressor.ts` (`createFFmpegCompressor`)
-- [ ] **2.5** Crear `src/lib/services/canvas-image-compressor.ts` (`createCanvasImageCompressor`)
-- [ ] **2.6** Crear `src/lib/services/rate-limiter.ts` (interface `RateLimiter` + `createInMemoryRateLimiter`)
-- [ ] **2.7** Verificar build: `npm run build`
+- [x] **2.1** Crear `src/lib/services/storage.ts` (interface `StorageService`)
+- [x] **2.2** Crear `src/lib/services/supabase-storage.ts` (`createBrowserStorageService` + `createServerStorageService`)
+- [x] **2.3** Crear `src/lib/services/compression.ts` (interfaces `VideoCompressor`, `ImageCompressor` + tipos de config)
+- [x] **2.4** Crear `src/lib/services/ffmpeg-compressor.ts` (`createFFmpegCompressor`)
+- [x] **2.5** Crear `src/lib/services/canvas-image-compressor.ts` (`createCanvasImageCompressor`)
+- [x] **2.6** Crear `src/lib/services/rate-limiter.ts` (interface `RateLimiter` + `createInMemoryRateLimiter`)
+- [x] **2.7** Verificar build: `npm run build`
 
 **Archivos creados**: 6 archivos nuevos en `src/lib/services/`
 
